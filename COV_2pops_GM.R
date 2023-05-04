@@ -223,13 +223,13 @@ for(exp in 1:11){#was 1:11
   test=list();meanzGM=vector();meanzGM_raw=vector();varGM=vector();stats=vector();migrants1_to2=vector();migrants2=vector();cor=vector();cor_raw=vector();migsGM1_to2=vector();migsGM2_to1=vector();stats2_to1=vector();#mig==2 should have 2 vlues
   setwd("/Users/ingridspies/Documents/GOA_cod/SimulationResults/cod_m.2_Niter100_Nrep3/")
   #Make a matrix of all the migration rates by the number of reps so for the k loop you can get means of Nreps over Niter runs and variance
+  m=seq(0,.2,.01)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
   Mean_mat=matrix(0,length(m),Nrep)
   Mean_raw_mat=matrix(0,length(m),Nrep)
   Mig1to2_mat=matrix(0,length(m),Nrep)
   Mig2to1_mat=matrix(0,length(m),Nrep)
   #migrants1_to2 is the proportion of migrants from 1 to 2 divided by the size of pop2
   #migrants2 is the opposite, but For MIG==1 (1 way migration) it is the proportion from 1 to 2 divided by the size of 1
-  m=seq(0,.2,.01)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
   for (k in 1:Nrep){  #k is number of Nrep
    for(j in 1:length(m)){   #m is the different migration rates you are testing
     for(i in 1:Niter){  #Call this Niter
