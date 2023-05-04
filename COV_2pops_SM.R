@@ -143,7 +143,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  #multiply the matrix of numbers at age by fishsel.
  P1_srvsel=matrix(0,Nyrs,nages);P2_srvsel=P1_srvsel
 
-  sigmaS=0.123 #This is from the mean CVs and then appluying log(CVs^2+1) formula
+  sigmaS=sqrt(0.123) #This is from the mean CVs and then appluying log(CVs^2+1) formula
   etaS1=rnorm(Nyrs,0,sigmaS); etaS2=rnorm(Nyrs,0,sigmaS); 
  for(i in 1:Nyrs){P1_srvsel[i,]=exp(etaS1[i]-sigmaS^2/2)*(Q1*srvsel*Natage_P1_Nyrs[i,]);
  P2_srvsel[i,]=exp(etaS2[i]-sigmaS^2/2)*(Q2*srvsel*Natage_P2_Nyrs[i,]) }
