@@ -4,19 +4,20 @@ rm(list = ls())
 #*************************************************************************
 #Define parameters for Pacific cod (1 sex)
 #Number of ages for this fish
-nages=20
+nages=10
 
-#no change in fishery selectvity
-fishsel=vector();
-fishsel[1]=0;fishsel[2]=0.0002386166;fishsel[3]=0.0146155849;fishsel[4]=0.1851750145;fishsel[5]=0.5952833774;fishsel[6]=0.9030184396;fishsel[7]=1;fishsel[8]=0.9919588363;
-fishsel[9]=0.9551342775;fishsel[10]=0.9184023284;fishsel[11]=0.8889373231;fishsel[12]=0.8668498915;fishsel[13]=0.8506209140;fishsel[14]=0.8387155050;fishsel[15]=0.8299334774;fishsel[16]=0.8234043416;
-fishsel[17]=0.8185108308;fishsel[18]=0.8148161694;fishsel[19]=0.8120088399;fishsel[20]=0.8098642013;#fisheries selectivity  
+#See file called SS3_cod_selectivity.R this comes from lenage2
 
-natmort=0.34
+srvsel=c(0.1801, 0.5245, 0.8802, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0,1)
+fishsel=c(0.0008, 0.0106, 0.0624, 0.2070, 0.4506, 0.7197, 0.9182, 0.9981, 1.0000,1)
+#fishsel=c(0.0003, 0.0059, 0.0489, 0.1986, 0.4768, 0.7800 ,0.9684, 1.0000, 1.0000, 1.0000)
+
+
+natmort=0.4
 
 #Maturity at age
-A=-4.88
-B=0.965 #note B is the steepness
+A=-4.7143
+B=0.9654 #note B is the steepness
 #A50 is A/-B
 age=seq(1,nages,1)
 Q=1/(1+exp(-(A+age*B)))
@@ -26,19 +27,18 @@ Q=1/(1+exp(-(A+age*B)))
 
 #Length at age for males and females
 #FEMALE(2) MALE(1) Weight at age von bert
-psi=5.41e-6
-theta=3.19
-Linf=113.274
-A0=0
-K=0.112
+psi=5.025e-6
+theta=3.199
+Linf=140.94
+A0=-0.2974
+K=0.126
 age=seq(1,nages,1)
 
-Wt_all=(psi*(Linf*(1-exp(-K*(age-A0))))^theta)
+Wt_all=0.001*(psi*(Linf*(1-exp(-K*(age-A0))))^theta)
 
 #*******************************************************************************
 #Calculate fishing mortality rate that maximizes TAC
-fmort=seq(0,0.06,.001)#SM
-fmort=seq(0.1,0.5,.001)#GM
+fmort=seq(0.1,1,.001)#GM
 
 N_til_init_a=vector()  #initial numbers when there is one recruit
 N_til_init_a[1]=1
@@ -51,10 +51,11 @@ N_til_init_Frange=vector()
 N_til_init_Frange[1]=1;
 FSB_F=vector()
 for(j in 1:length(fmort)){
- for (i in 2:nages){  #fill in N_til_init;
+ for (i in 2:(nages-1)){  #fill in N_til_init;
   N_til_init_Frange[i]=N_til_init_Frange[i-1]*exp(-(natmort+fishsel[i-1]*fmort[j]));
  }
- FSB_F[j]=sum(Wt_all*N_til_init_Frange*.5*Q)
+  N_til_init_Frange[nages]=N_til_init_Frange[nages-1]*exp(-(natmort+(fishsel[nages-1]*fmort[j])))/(1-exp(-(natmort+(fishsel[nages-1]*fmort[j]))))
+   FSB_F[j]=sum(Wt_all*N_til_init_Frange*.5*Q)
 }
 
 
@@ -67,7 +68,7 @@ fmort[min(which(FSB_F/FSB_init<0.35))]#This is F35%
 
 #F40%  GM: 0.279
 #F35%  GM: 0.34
-F35=0.35; F40=0.279
+F35=0.661; F40=0.528
 
 #*****************************************************************************
 #This is the function that varies steepness and fishing mortality rate
@@ -131,7 +132,7 @@ N_til_init_a[nages]=N_til_init_a[nages-1]*exp(-natmort)/(1-exp(-natmort))
 #Now run function for a range of hs and Fs
 
 #see what affect different H's have
-hs=seq(.76,0.79,.005);Fish=seq(.2,.5,.01) #cod
+hs=seq(.72,0.8,.005);Fish=seq(.2,.9,.01) #cod
 
 res=matrix(0,length(Fish),length(hs))
 SSB=matrix(0,length(Fish),length(hs))
@@ -155,6 +156,8 @@ colnames(TAC)=hs;colnames(res)=hs;
 plot(Fish,TAC[,1],ylim=c(12000,max(TAC)),type="l",col=1, ylab="Total Allowable Catch",xlab="Fishing mortality rate")
 for(i in 2:ncol(TAC)){lines(Fish,TAC[,i])}
 
-
-#For Pcod, F35%=FMSY when steepness = 0.76. hs=seq(.76,0.79,.005);Fish=seq(.2,.5,.01)
+#Steepness is where TAC is maximized at F35%=FMSY=0.652
+#Fish[which(TAC[,9]==max(TAC[,9]))]#maximized at the 9th steepness
+#hs[10]=0.765
+#For Pcod, F35%=FMSY when steepness = 0.765. hs=seq(.76,0.79,.005);Fish=seq(.2,.5,.01)
 
