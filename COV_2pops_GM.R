@@ -2,7 +2,6 @@ library(matrixStats)
 #Parameters based on Pacific cod
 L_all=vector()
 Wt_all=vector()
-fishsel=vector()
 srvsel=vector()
 mat=vector()
 nages=10
@@ -12,14 +11,18 @@ K=0.126
 A0=-0.2974 
 psi=5.025e-6
 theta=3.199
+h = 0.765
+F40=c(0.528,0.528)
+SS0=c(6834,6834)
 
 #selectiivty comes from 2022 SS3 model double normal
 #See file called SS3_cod_selectivity.R this comes from lenage2
 
 srvsel=c(0.1801, 0.5245, 0.8802, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0,1)
-fishsel=c(0.0008, 0.0106, 0.0624, 0.2070, 0.4506, 0.7197, 0.9182, 0.9981, 1.0000,1)
+fishsel1=c(0.0008, 0.0106, 0.0624, 0.2070, 0.4506, 0.7197, 0.9182, 0.9981, 1.0000,1)
+fishsel2=fishsel1
 natmort=0.4
-sigmaR=0.411
+sigmaR=sqrt(0.411)
 
 #maturity Aleutian Islands
 
@@ -28,18 +31,23 @@ mat_slope=1.03584  #slope is 1/B2
 mat_a50=4.883261  #A50=-A/B
 B1=-4.7143
 B2=0.9654
-1/(1+exp(-((B1)+age*B2)))
 
 for(i in 1:nages){
  mat[i]=1/(1+exp(-(B1+age[i]*B2)))}
-
 
 #earlier maturity multiply B*.75
 mat_a5012=vector()#This is earlier maturity - keep slope the same and reduce A40
 for(i in 1:nages){
  mat_a5012[i]=1/(1+exp(-(.75*B1+age[i]*B2)))}
 
+Q1=mat
+Q2=mat
+natmort=c(0.4,0.4)
 
+#at m=0.1 the raw is not significant(uncorrelated) and the error is correlated.
+#plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P1_raw[51:Nyrs, ]),col="red")
+#plot(rowSums(P2_srvsel[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_srvsel[51:Nyrs, ]))));lines(rowSums(P1_srvsel[51:Nyrs, ]),col="red")
+#plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_srvsel[51:Nyrs, ]))));lines(rowSums(P2_srvsel[51:Nyrs, ]),col="red")
 
 #note all parameters are either a vector of 2 or there are 2 vectors for each population.
 
@@ -56,13 +64,11 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  N_til_init_P1=vector();N_til_init_P2=vector();
  N_til_init_P1[1]=1;N_til_init_P2[1]=1;
  for (i in 2:nages){  
-  N_til_init_P1[i]=N_til_init_P1[i-1]*exp(-natmort[1]);
-  N_til_init_P2[i]=N_til_init_P2[i-1]*exp(-natmort[2]);}
+   N_til_init_P1[i]=N_til_init_P1[i-1]*exp(-natmort[1]);
+   N_til_init_P2[i]=N_til_init_P2[i-1]*exp(-natmort[2]);}
  N_til_init_P1[nages]=N_til_init_P1[nages-1]*exp(-natmort[1])/(1-exp(-natmort[1]));
  N_til_init_P2[nages]=N_til_init_P2[nages-1]*exp(-natmort[2])/(1-exp(-natmort[2]));
  
- N_til_init_P1=sum(N_til_init_P1)
- N_til_init_P2=sum(N_til_init_P2)
  Rec0_P1=SS0[1]/(0.5*sum(Wt_all*Q1*N_til_init_P1))
  Rec0_P2=SS0[2]/(0.5*sum(Wt_all*Q2*N_til_init_P2))
  N_init_P1=Rec0_P1*N_til_init_P1
@@ -70,23 +76,22 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  
  
  #establish the SBPR with 1 recruit and F40%
- F40=0.513 #I dont actually know what is F40. F40% The fishing mortality at which spawning biomass-per-recruit is 40% of its unfished level..2389 from Spies Punt
  N_til_init_P1_F40=vector();N_til_init_P2_F40=vector();
  N_til_init_P1_F40[1]=1;N_til_init_P2_F40[1]=1;
- for (i in 2:nages){  #fill in N_til_init;
-  N_til_init_P1_F40[i]=N_til_init_P1_F40[i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40));
-  N_til_init_P2_F40[i]=N_til_init_P2_F40[i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40));}
- N_til_init_P1_F40[nages]=N_til_init_P1_F40[nages-1]*exp(-(natmort[1]+fishsel1[nages]*F40))/(1-exp(-(natmort[1]+fishsel1[nages]*F40)));
- N_til_init_P2_F40[nages]=N_til_init_P2_F40[nages-1]*exp(-(natmort[2]+fishsel2[nages]*F40))/(1-exp(-(natmort[2]+fishsel2[nages]*F40)));
+ for (i in 2:(nages-1)){  #fill in N_til_init;
+   N_til_init_P1_F40[i]=N_til_init_P1_F40[i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40[1]));
+   N_til_init_P2_F40[i]=N_til_init_P2_F40[i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40[2]));}
+ N_til_init_P1_F40[nages]=N_til_init_P1_F40[nages-1]*exp(-(natmort[1]+fishsel1[nages]*F40[1]))/(1-exp(-(natmort[1]+fishsel1[nages]*F40[1])));
+ N_til_init_P2_F40[nages]=N_til_init_P2_F40[nages-1]*exp(-(natmort[2]+fishsel2[nages]*F40[2]))/(1-exp(-(natmort[2]+fishsel2[nages]*F40[2])));
  
  Rec0_P1_F40=SS0[1]/(0.5*sum(Wt_all*Q1*N_til_init_P1_F40))
- Rec0_P2_F40=SS0[2]/(0.5*sum(Wt_all*Q1*N_til_init_P2_F40))
- N_init_P1=Rec0_P1_F40*N_til_init_P1_F40
- N_init_P2=Rec0_P2_F40*N_til_init_P2_F40
+ Rec0_P2_F40=SS0[2]/(0.5*sum(Wt_all*Q2*N_til_init_P2_F40))
+ N_init_P1_F40=Rec0_P1_F40*N_til_init_P1_F40
+ N_init_P2_F40=Rec0_P2_F40*N_til_init_P2_F40
  
  
  #For this study, therefore, steepness was selected so that FMSY = F35%: 
- h = 0.76
+
  FSB_P1=vector();FSB_P2=vector();
  migrants_to2=vector();migrants_to1=vector();
  rate=vector()
@@ -98,20 +103,22 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  
  for (y in 2:Nyrs){
   
-  FSB_P1[y]=sum(Natage_P1_Nyrs[y-1,]*Q1*.5)
-  VBRec_P1=(4*h*Rec0_P1_F40*FSB_P1[y])/(SS0[1]*(1-h)+FSB_P1[y]*((5*h)-1))*exp(rnorm(1,0,sqrt(sigmaR2_1)))
-  
-  FSB_P2[y]=sum(Natage_P2_Nyrs[y-1,]*Q2*.5)
-  VBRec_P2=(4*h*Rec0_P2_F40*FSB_P2[y])/(SS0[2]*(1-h)+FSB_P2[y]*((5*h)-1))*exp(rnorm(1,0,sqrt(sigmaR2_2)))
-  
-  #Try 10% migration from P1 to P2 and the other way at the age 0 phase (larval)
-  
-  Natage_P1_Nyrs[y,1]=VBRec_P1;
-  for(i in 2:nages){Natage_P1_Nyrs[y,i]=Natage_P1_Nyrs[y-1,i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40))}
-  
-  Natage_P2_Nyrs[y,1]=VBRec_P2;
-  for(i in 2:nages){Natage_P2_Nyrs[y,i]=Natage_P2_Nyrs[y-1,i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40))}
-  
+   FSB_P1[y-1]=0.5*sum(Wt_all*Natage_P1_Nyrs[y-1,]*Q1)
+   VBRec_P1=(4*h*Rec0_P1*FSB_P1[y-1])/(SS0[1]*(1-h)+(FSB_P1[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_1))
+   
+   FSB_P2[y-1]=0.5*sum(Wt_all*Natage_P2_Nyrs[y-1,]*Q2)
+   VBRec_P2=(4*h*Rec0_P2*FSB_P2[y-1])/(SS0[2]*(1-h)+(FSB_P2[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_2))
+   
+   #Try 10% migration from P1 to P2 and the other way at the age 0 phase (larval)
+   
+   Natage_P1_Nyrs[y,1]=VBRec_P1;
+   for(i in 2:(nages-1)){Natage_P1_Nyrs[y,i]=Natage_P1_Nyrs[y,i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40[1]))}
+   Natage_P1_Nyrs[y,nages]=Natage_P1_Nyrs[y,nages-1]*exp(-(natmort[1]+fishsel1[nages-1]*F40[1]))/(1-exp(-(natmort[1]+fishsel1[nages-1]*F40[1])))
+   
+   Natage_P2_Nyrs[y,1]=VBRec_P2;
+   for(i in 2:(nages-1)){Natage_P2_Nyrs[y,i]=Natage_P2_Nyrs[y,i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40[2]))}
+   Natage_P2_Nyrs[y,nages]=Natage_P2_Nyrs[y,nages-1]*exp(-(natmort[2]+fishsel2[nages-1]*F40[2]))/(1-exp(-(natmort[2]+fishsel2[nages-1]*F40[2])))
+   
   if (MIG==1){  #Just one way from pop1 to pop2
    Natage_P1_Nyrs[y,]=(1-m)*Natage_P1_Nyrs[y,]
    Natage_P2_Nyrs[y,]=Natage_P2_Nyrs[y,]+(m*Natage_P1_Nyrs[y,])
@@ -130,11 +137,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  }#repeat number of runs
  
  #Maybe what we actually care about is number of mature females. 
- 
- matP1=0.5*t(t(Natage_P1_Nyrs) *Q1)
- matP2=0.5*t(t(Natage_P2_Nyrs) *Q1)
- 
- 
+
  #Are they correlated
  #All individuals after the first 10
  #multiply the matrix of numbers at age by fishsel.
@@ -156,9 +159,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  P2_raw[i,]=(Q2*Natage_P2_Nyrs[i,]) }
  
  pcor_raw=cor.test(rowSums(P1_raw[51:Nyrs,]),rowSums(P2_raw[51:Nyrs,]))
- 
 
- 
  #if MIG=1 quantify migration rate which is number of migtants (age1) from 1 to 2 divided by total number in pop2
  rate[1]=mean(migrants_to2,na.rm=TRUE)
  rate[2]=mean(migrants_to1,na.rm=TRUE)
@@ -182,17 +183,15 @@ for(exp in 1:11){#was 1:11
  A0=-0.2974 
  psi=5.025e-6
  theta=3.199
+ sigmaR2_1=sqrt(0.408)
+ sigmaR2_2=sqrt(0.408)
  
- sigmaR2_1=0.408
- sigmaR2_2=0.408
  
- 
- fishsel1=fishsel
- fishsel2=fishsel
+ fishsel1=c(0.0008, 0.0106, 0.0624, 0.2070, 0.4506, 0.7197, 0.9182, 0.9981, 1.0000,1)
+ fishsel2=c(0.0008, 0.0106, 0.0624, 0.2070, 0.4506, 0.7197, 0.9182, 0.9981, 1.0000,1)
  natmort=c(0.4,0.4)
- SS0=c(14000,14000) #initial stock biomass.
  Q1=mat
- Q2=mat_a5012
+ Q2=mat
  Nyrs=300 #Number of years to run the simulation
  Niter=100#number of iterations of the simulation
  Nrep=3
@@ -205,9 +204,9 @@ for(exp in 1:11){#was 1:11
  if (exp==6){Q2=mat}
  if (exp==7){Q1=mat}
  if (exp==8){sigmaR2_1=0.25;sigmaR2_2=0.25}
- if (exp==9){sigmaR2_1=0.66;sigmaR2_2=0.66}
- if (exp==10){sigmaR2_1=0.66;sigmaR2_2=0.25}
- if (exp==11){sigmaR2_1=0.25;sigmaR2_2=0.66}
+ if (exp==9){sigmaR2_1=0.85;sigmaR2_2=0.85}
+ if (exp==10){sigmaR2_1=0.85;sigmaR2_2=0.25}
+ if (exp==11){sigmaR2_1=0.25;sigmaR2_2=0.85}
  for(popstat in 1:8){  #was 1:4
   if(popstat<5){ MIG=1;}
   if(popstat==1){SS0=c(6834,6834)}
@@ -218,12 +217,12 @@ for(exp in 1:11){#was 1:11
   if(popstat==5){SS0=c(6834,6834)}
   if(popstat==6){SS0=c(6834,683)}
   if(popstat==7){SS0=c(6834,68)}
-  if(popstat==){SS0=c(683,6834)}
+  if(popstat==8){SS0=c(683,6834)}
   
   test=list();meanzGM=vector();meanzGM_raw=vector();varGM=vector();stats=vector();migrants1_to2=vector();migrants2=vector();cor=vector();cor_raw=vector();migsGM1_to2=vector();migsGM2_to1=vector();stats2_to1=vector();#mig==2 should have 2 vlues
-  setwd("/Users/ingridspies/Documents/GOA_cod/SimulationResults/cod_m.2_Niter100_Nrep3/")
+  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/cod_m.5_Niter100_Nrep3/")
   #Make a matrix of all the migration rates by the number of reps so for the k loop you can get means of Nreps over Niter runs and variance
-  m=seq(0,.2,.01)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
+  m=seq(0,.5,.02)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
   Mean_mat=matrix(0,length(m),Nrep)
   Mean_raw_mat=matrix(0,length(m),Nrep)
   Mig1to2_mat=matrix(0,length(m),Nrep)
@@ -241,13 +240,13 @@ for(exp in 1:11){#was 1:11
     }
     #code to apply false discovery rate p-value adjustment
     cor2=sort(cor);
-    BH=max(which(cor2<0.05*seq(1:length(cor2))/length(cor2)))#I think this works. If it is numeric(0) then I think this means all are significant.
-    if(BH[1]>0){BHp=BH}else(BHp=-1)#hopefully if none are significant then none are less than -1.
+    if(identical(which(cor2<0.05*seq(1:length(cor2))/length(cor2)),integer(0))){BH=0}else(BH=max(which(cor2<0.05*seq(1:length(cor2))/length(cor2))))
+    if(BH[1]>0){BHp=BH}else(BHp=0)#if none are significant then BHp is zero.
     meanzGM[j]=BHp#out of 100 times how many were significantly corrrelated populations? each level represents an increasing value of migratoin
-
+    
     cor2_raw=sort(cor_raw);
-    BH_raw=max(which(cor2_raw<0.05*seq(1:length(cor2_raw))/length(cor2_raw)))#I think this works. If it is numeric(0) then I think this means all are significant.
-    if(BH_raw[1]>0){BHp_raw=BH_raw}else(BHp_raw=-1)#hopefully if none are significant then none are less than -1.
+    if(identical(which(cor2_raw<0.05*seq(1:length(cor2_raw))/length(cor2_raw)),integer(0))){BH_raw=0}else(BH_raw=max(which(cor2_raw<0.05*seq(1:length(cor2_raw))/length(cor2_raw))))
+    if(BH_raw[1]>0){BHp_raw=BH_raw}else(BHp_raw=0)
     meanzGM_raw[j]=BHp_raw#out of 100 times how many were significantly corrrelated populations? each level represents an increasing value of migratoin
     
         #
