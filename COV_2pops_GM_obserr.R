@@ -1,3 +1,5 @@
+rm(list = ls(all.names = TRUE))
+
 library(matrixStats)
 #Parameters based on Pacific cod
 L_all=vector()
@@ -15,6 +17,7 @@ theta=3.199
 Nyrs=300
 h = 0.765
 sigmaR2_1=sqrt(0.408)
+SS0=c(6834,6834)
 
 srvsel=c(0.1801, 0.5245, 0.8802, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0,1)
 fishsel=c(0.0008, 0.0106, 0.0624, 0.2070, 0.4506, 0.7197, 0.9182, 0.9981, 1.0000,1)
@@ -97,7 +100,7 @@ for(k in 1:1000){
     }
     
     #  plot(rowSums(P1_srvsel[51:Nyrs,]),type="l");lines(rowSums(P2_srvsel[51:Nyrs,]))
-    pcor=cor.test(rowSums(P1_srvsel[51:Nyrs,]),rowSums(P2_srvsel[51:Nyrs,]))
+    pcor=cor.test(rowSums(P1_srvsel[51:Nyrs,]),rowSums(P2_srvsel[51:Nyrs,]),alternative="greater")
     
     if(pcor$estimate>0){survey[j,k]=pcor$p.value}else{survey[j,k]=1};
   }
@@ -105,8 +108,8 @@ for(k in 1:1000){
 }
 
 #For the result with the uniformaly distributed sigmaS
-write.csv(survey,"/Users/ingrid.spies/Documents/GOA_cod/survey_obserror_runif.csv") 
-survey=read.csv("/Users/ingrid.spies/Documents/GOA_cod/survey_obserror_runif.csv",header=TRUE) 
+write.csv(survey,"/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/survey_obserror_runifGM.csv") 
+survey=read.csv("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/survey_obserror_runifGM.csv",header=TRUE) 
 
 sigmaS=(seq(0,1,.02))
 survey_means=vector()
