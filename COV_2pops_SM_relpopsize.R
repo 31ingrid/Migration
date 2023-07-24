@@ -1,3 +1,5 @@
+rm(list = ls(all.names = TRUE))
+
 library(matrixStats)
 #Parameters based on Blackspotted RF
 L_all=vector()
@@ -153,7 +155,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
   P2_srvsel[i,]=exp(etaS2[i]-sigmaS^2/2)*(Q2*srvsel*Natage_P2_Nyrs[i,]) }
   
   
- pcor=cor.test(rowSums(P1_srvsel)[51:Nyrs],rowSums(P2_srvsel)[51:Nyrs])
+ pcor=cor.test(rowSums(P1_srvsel)[51:Nyrs],rowSums(P2_srvsel)[51:Nyrs],alternative="greater")
  
  #Also do correlation test among the true 
  P1_raw=matrix(0,Nyrs,nages);P2_raw=P1_raw
@@ -163,7 +165,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  P1_raw[i,]=(Q1*Natage_P1_Nyrs[i,]);
  P2_raw[i,]=(Q2*Natage_P2_Nyrs[i,]) }
  
- pcor_raw=cor.test(rowSums(P1_raw)[51:Nyrs],rowSums(P2_raw)[51:Nyrs])
+ pcor_raw=cor.test(rowSums(P1_raw)[51:Nyrs],rowSums(P2_raw)[51:Nyrs],alternative="greater")
  
 # pcor;pcor_raw
 # plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P1_raw[51:Nyrs, ]),col="red")
@@ -237,7 +239,7 @@ for(exp in 1:1){#was 1:11
   if(popstat==12){SS0=c(43400,75000)}
   
   test=list();meanzSM=vector();meanzSM_raw=vector();varSM=vector();stats=vector();migrants1_to2=vector();migrants2=vector();cor=vector();cor_raw=vector();migsSM1_to2=vector();migsSM2_to1=vector();stats2_to1=vector();#mig==2 should have 2 vlues
-  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/blackspotted_relpop_s09/")#in 5 I increased the sigmaS to .4 and also added another one way migration to the other way.
+  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM_relpopsize/")#in 5 I increased the sigmaS to .4 and also added another one way migration to the other way.
   #Make a matrix of all the migration rates by the number of reps so for the k loop you can get means of Nreps over Niter runs and variance
   m=seq(0,.5,.02)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
   Mean_mat=matrix(0,length(m),Nrep)

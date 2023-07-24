@@ -1,6 +1,8 @@
 #In this version I force the size of the western AI population
 #to be SS0 3000 for many years and then for 25 years to drop to 1000 t (biomass)
 #It will drop due to increased fishing (that I will force)
+rm(list = ls(all.names = TRUE))
+
 library(matrixStats)
 
 L_all=vector()
@@ -15,6 +17,7 @@ K=0.06
 A0=-3.40 
 psi=6.54e-6
 theta=3.24
+h=0.67
 
 
 #selectiivty comes from 2022 SS3 model double normal
@@ -106,7 +109,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  Natage_P2_Nyrs[1,]=N_init_P2
  
  for (y in 2:Nyrs){
-  if (y>150){F40[1]=0.09}
+  if (y>150){F40[1]=0.09;F40[2]=0.02;}
    FSB_P1[y-1]=0.5*sum(Wt_all*Natage_P1_Nyrs[y-1,]*Q1)
    VBRec_P1=(4*h*Rec0_P1*FSB_P1[y-1])/(SS0[1]*(1-h)+(FSB_P1[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_1))
    
@@ -137,6 +140,12 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
    migrants_to1[y]=sum(m*Natage_P2_Nyrs[y,])/sum((1-m)*Natage_P1_Nyrs[y,])
   }
   
+  if (MIG==3){ #one way large to small
+   Natage_P2_Nyrs[y,]=(1-m)*Natage_P2_Nyrs[y,]
+   Natage_P1_Nyrs[y,]=Natage_P1_Nyrs[y,]+(m*Natage_P2_Nyrs[y,])
+   migrants_to1[y]=sum(m*Natage_P2_Nyrs[y,])/sum(Natage_P1_Nyrs[y,])
+   migrants_to2[y]=sum(m*Natage_P2_Nyrs[y,])/sum(Natage_P2_Nyrs[y,])
+   }
   
  }#repeat number of runs
  
@@ -156,17 +165,17 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  for(i in 1:Nyrs){P1_srvsel[i,]=exp(etaS1[i]-(sigmaS^2)/2)*(Q1*srvsel*Natage_P1_Nyrs[i,]);
  P2_srvsel[i,]=exp(etaS2[i]-(sigmaS^2)/2)*(Q2*srvsel*Natage_P2_Nyrs[i,]) }
 
- pcor=cor.test(rowSums(P1_srvsel[51:Nyrs,]),rowSums(P2_srvsel[51:Nyrs,]))
+ pcor=cor.test(rowSums(P1_srvsel[251:Nyrs,]),rowSums(P2_srvsel[251:Nyrs,]),alternative="greater")
  
  #Also do correlation test among the true 
  P1_raw=matrix(0,Nyrs,nages);P2_raw=P1_raw
 
  for(i in 1:Nyrs)
  {
- P1_raw[i,]=(Q1*Natage_P1_Nyrs[i,]);
- P2_raw[i,]=(Q2*Natage_P2_Nyrs[i,]) }
+ P1_raw[i,]=(Q1*srvsel*Natage_P1_Nyrs[i,]);
+ P2_raw[i,]=(Q2*srvsel*Natage_P2_Nyrs[i,]) }
  
- pcor_raw=cor.test(rowSums(P1_raw[51:Nyrs,]),rowSums(P2_raw[51:Nyrs,]))
+ pcor_raw=cor.test(rowSums(P1_raw[51:Nyrs,]),rowSums(P2_raw[51:Nyrs,]),alternative="greater")
  
 #  pcor;pcor_raw
 #  plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P1_raw[51:Nyrs, ]),col="red")
@@ -209,12 +218,12 @@ for(exp in 1:1){#was 1:11
  fishsel1=fishsel
  fishsel2=fishsel
  natmort=c(0.05,0.05)
- SS0=c(750,1212)#c(1500,2425)#c(3000,4850) #initial stock biomass.
+ SS0=c(434,750)#c(750,1212)#c(1500,2425)#c(3000,4850) #initial stock biomass.
  Q1=mat
  Q2=mat_a5012
  Nyrs=300 #Number of years to run the simulation
  Niter=100#number of iterations of the simulation
- Nrep=10
+ Nrep=100
  
  if (exp==1){}
  if (exp==2){natmort=c(.025,.025)}
@@ -227,14 +236,15 @@ for(exp in 1:1){#was 1:11
  if (exp==9){sigmaR2_1=0.85;sigmaR2_2=0.85}
  if (exp==10){sigmaR2_1=0.85;sigmaR2_2=0.25}
  if (exp==11){sigmaR2_1=0.25;sigmaR2_2=0.85}
- for(popstat in 1:2){  #was 1:4
-  if(popstat<2){ MIG=1;}
-  if(popstat>1){ MIG=2;}
+ for(popstat in 1:3){  #was 1:4
+  if(popstat==1){ MIG=1;}#one way small to large
+  if(popstat==2){ MIG=2;}
+  if(popstat==3){ MIG=3;}#this will be the 1 way large to small
  
 
   
   test=list();meanzSM=vector();meanzSM_raw=vector();varSM=vector();stats=vector();migrants1_to2=vector();migrants2=vector();cor=vector();cor_raw=vector();migsSM1_to2=vector();migsSM2_to1=vector();stats2_to1=vector();#mig==2 should have 2 vlues
-  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/blackspotted_forcesizes/")
+  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM_forcesizes2/")
   #Make a matrix of all the migration rates by the number of reps so for the k loop you can get means of Nreps over Niter runs and variance
   m=seq(0,.5,.02)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
   Mean_mat=matrix(0,length(m),Nrep)
@@ -318,7 +328,7 @@ for(exp in 1:1){#was 1:11
 
 
 Year=c(rep(seq(1,Nyrs,1),2))
-Number=c(test[[4]],test[[5]])
+Number=c(test[[5]],test[[6]])
 Name=c(rep("PopA",Nyrs),rep("PopB",Nyrs))
 Res=data.frame(Number,Name,Year)
 ggplot(Res)+geom_line(aes(x=Year,y=Number,col=Name))+theme_bw()

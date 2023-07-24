@@ -1,4 +1,12 @@
+
 rm(list = ls(all.names = TRUE))
+mig=seq(0,0.18,.03)
+WAI=vector()
+CAI=vector()
+for (z in 1:length(mig)){
+  m=mig[z]
+#This is the actual MSE
+
 
 library(matrixStats)
 #Parameters based on Pacific cod
@@ -14,7 +22,8 @@ K=0.06
 A0=-3.40 
 psi=6.54e-6
 theta=3.24
-h=0.67
+h = 0.69
+F40=c(0.038,.038)
 
 #selectiivty comes from 2022 SS3 model double normal
 #See file called SS3_cod_selectivity.R this comes from lenage2
@@ -25,10 +34,13 @@ srvsel=(1/(1+exp(-(srv_slope*(age-srv_A50)))))
 
 fsh_slope=0.69
 fsh_A50=13.5
-fishsel=(1/(1+exp(-(srv_slope*(age-srv_A50)))))
+fishsel=(1/(1+exp(-(fsh_slope*(age-fsh_A50)))))
 
 natmort=0.05
 sigmaR=0.64
+
+fishsel1=fishsel
+fishsel2=fishsel
 
 #maturity Aleutian Islands
 
@@ -39,20 +51,16 @@ mat_a50=24.5  #A50=-A/B
 for(i in 1:nages){
  mat[i]=(1/(1+exp(-(mat_slope*(age[i]-mat_a50)))))
  }
-
+Q1=mat;Q2=mat;
 
 #earlier maturity multiply B*.75
 mat_a5012=vector()#This is earlier maturity - keep slope the same and reduce A40
 for(i in 1:nages){
  mat_a5012[i]=(1/(1+exp(-((mat_slope)*(age[i]-.75*mat_a50)))))
-}
-
-Q1=mat
-Q2=mat
-natmort=c(0.05,0.05)
+ }
 
 #note all parameters are either a vector of 2 or there are 2 vectors for each population.
-
+natmort=c(0.05,0.05)
 pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigmaR2_1,sigmaR2_2,Nyrs)
 {
  outpops=list()
@@ -62,11 +70,12 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
    L_all[i]=Linf*(1-exp(-K*(age[i]-A0)));#cm
    Wt_all[i]=0.001*psi*(Linf*(1-exp(-K*(age[i]-A0))))^theta};  #divide by 1000 for kg to mt conversion
  
+ 
  N_til_init_P1=vector();N_til_init_P2=vector();
  N_til_init_P1[1]=1;N_til_init_P2[1]=1;
  for (i in 2:nages){  
-   N_til_init_P1[i]=N_til_init_P1[i-1]*exp(-natmort[1]);
-   N_til_init_P2[i]=N_til_init_P2[i-1]*exp(-natmort[2]);}
+  N_til_init_P1[i]=N_til_init_P1[i-1]*exp(-natmort[1]);
+  N_til_init_P2[i]=N_til_init_P2[i-1]*exp(-natmort[2]);}
  N_til_init_P1[nages]=N_til_init_P1[nages-1]*exp(-natmort[1])/(1-exp(-natmort[1]));
  N_til_init_P2[nages]=N_til_init_P2[nages-1]*exp(-natmort[2])/(1-exp(-natmort[2]));
  
@@ -74,13 +83,15 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  Rec0_P2=SS0[2]/(0.5*sum(Wt_all*Q2*N_til_init_P2))
  N_init_P1=Rec0_P1*N_til_init_P1
  N_init_P2=Rec0_P2*N_til_init_P2
- 
+
+
  #establish the SBPR with 1 recruit and F40%
+ #We estimated .033 for F40.. F40% The fishing mortality at which spawning biomass-per-recruit is 40% of its unfished level..2389 from Spies Punt
  N_til_init_P1_F40=vector();N_til_init_P2_F40=vector();
  N_til_init_P1_F40[1]=1;N_til_init_P2_F40[1]=1;
  for (i in 2:(nages-1)){  #fill in N_til_init;
-   N_til_init_P1_F40[i]=N_til_init_P1_F40[i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40[1]));
-   N_til_init_P2_F40[i]=N_til_init_P2_F40[i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40[2]));}
+  N_til_init_P1_F40[i]=N_til_init_P1_F40[i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40[1]));
+  N_til_init_P2_F40[i]=N_til_init_P2_F40[i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40[2]));}
  N_til_init_P1_F40[nages]=N_til_init_P1_F40[nages-1]*exp(-(natmort[1]+fishsel1[nages]*F40[1]))/(1-exp(-(natmort[1]+fishsel1[nages]*F40[1])));
  N_til_init_P2_F40[nages]=N_til_init_P2_F40[nages-1]*exp(-(natmort[2]+fishsel2[nages]*F40[2]))/(1-exp(-(natmort[2]+fishsel2[nages]*F40[2])));
  
@@ -89,7 +100,9 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  N_init_P1_F40=Rec0_P1_F40*N_til_init_P1_F40
  N_init_P2_F40=Rec0_P2_F40*N_til_init_P2_F40
  
+ 
  #For this study, therefore, steepness was selected so that FMSY = F35%: 
+
  FSB_P1=vector();FSB_P2=vector();
  migrants_to2=vector();migrants_to1=vector();
  rate=vector()
@@ -100,29 +113,35 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  Natage_P2_Nyrs[1,]=N_init_P2
  
  for (y in 2:Nyrs){
+  if (y>0&y<200) {F40[1]=0;F40[2]=0}
+  if (y>199&y<400) {F40[1]=0.09;F40[2]=0.02}
+
+  FSB_P1[y-1]=0.5*sum(Wt_all*Natage_P1_Nyrs[y-1,]*Q1)
+  VBRec_P1=(4*h*Rec0_P1*FSB_P1[y-1])/(SS0[1]*(1-h)+(FSB_P1[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_1))
   
-   FSB_P1[y-1]=0.5*sum(Wt_all*Natage_P1_Nyrs[y-1,]*Q1)
-   VBRec_P1=(4*h*Rec0_P1*FSB_P1[y-1])/(SS0[1]*(1-h)+(FSB_P1[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_1))
-   
-   FSB_P2[y-1]=0.5*sum(Wt_all*Natage_P2_Nyrs[y-1,]*Q2)
-   VBRec_P2=(4*h*Rec0_P2*FSB_P2[y-1])/(SS0[2]*(1-h)+(FSB_P2[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_2))
-   
-   #Try 10% migration from P1 to P2 and the other way at the age 0 phase (larval)
-   
-   Natage_P1_Nyrs[y,1]=VBRec_P1;
-   for(i in 2:(nages-1)){Natage_P1_Nyrs[y,i]=Natage_P1_Nyrs[y,i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40[1]))}
-   Natage_P1_Nyrs[y,nages]=Natage_P1_Nyrs[y,nages-1]*exp(-(natmort[1]+fishsel1[nages-1]*F40[1]))/(1-exp(-(natmort[1]+fishsel1[nages-1]*F40[1])))
-   
-   Natage_P2_Nyrs[y,1]=VBRec_P2;
-   for(i in 2:(nages-1)){Natage_P2_Nyrs[y,i]=Natage_P2_Nyrs[y,i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40[2]))}
-   Natage_P2_Nyrs[y,nages]=Natage_P2_Nyrs[y,nages-1]*exp(-(natmort[2]+fishsel2[nages-1]*F40[2]))/(1-exp(-(natmort[2]+fishsel2[nages-1]*F40[2])))
-   
+  FSB_P2[y-1]=0.5*sum(Wt_all*Natage_P2_Nyrs[y-1,]*Q2)
+  VBRec_P2=(4*h*Rec0_P2*FSB_P2[y-1])/(SS0[2]*(1-h)+(FSB_P2[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_2))
+  
+  #Try 10% migration from P1 to P2 and the other way at the age 0 phase (larval)
+  
+  Natage_P1_Nyrs[y,1]=VBRec_P1;
+  for(i in 2:(nages-1)){Natage_P1_Nyrs[y,i]=Natage_P1_Nyrs[y,i-1]*exp(-(natmort[1]+fishsel1[i-1]*F40[1]))}
+  Natage_P1_Nyrs[y,nages]=Natage_P1_Nyrs[y,nages-1]*exp(-(natmort[1]+fishsel1[nages-1]*F40[1]))/(1-exp(-(natmort[1]+fishsel1[nages-1]*F40[1])))
+  
+  Natage_P2_Nyrs[y,1]=VBRec_P2;
+  for(i in 2:(nages-1)){Natage_P2_Nyrs[y,i]=Natage_P2_Nyrs[y,i-1]*exp(-(natmort[2]+fishsel2[i-1]*F40[2]))}
+  Natage_P2_Nyrs[y,nages]=Natage_P2_Nyrs[y,nages-1]*exp(-(natmort[2]+fishsel2[nages-1]*F40[2]))/(1-exp(-(natmort[2]+fishsel2[nages-1]*F40[2])))
+  
   if (MIG==1){  #Just one way from pop1 to pop2
-   Natage_P1_Nyrs[y,]=(1-m)*Natage_P1_Nyrs[y,]
-   Natage_P2_Nyrs[y,]=Natage_P2_Nyrs[y,]+(m*Natage_P1_Nyrs[y,])
-   migrants_to2[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P2_Nyrs[y,])
-   migrants_to1[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P1_Nyrs[y,])
-  }
+#   Natage_P1_Nyrs[y,]=(1-m)*Natage_P1_Nyrs[y,]
+#   Natage_P2_Nyrs[y,]=Natage_P2_Nyrs[y,]+(m*Natage_P1_Nyrs[y,])
+#   migrants_to2[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P2_Nyrs[y,])
+#   migrants_to1[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P1_Nyrs[y,])
+    Natage_P2_Nyrs[y,]=(1-m)*Natage_P2_Nyrs[y,]
+    Natage_P1_Nyrs[y,]=Natage_P1_Nyrs[y,]+(m*Natage_P2_Nyrs[y,])
+    migrants_to1[y]=sum(m*Natage_P2_Nyrs[y,])/sum(Natage_P1_Nyrs[y,])
+    migrants_to2[y]=sum(m*Natage_P2_Nyrs[y,])/sum(Natage_P2_Nyrs[y,])
+      }
   
   if (MIG==2){ #both ways migration
    Natage_P1_Nyrs[y,]=Natage_P1_Nyrs[y,]*(1-m)+Natage_P2_Nyrs[y,]*m
@@ -133,6 +152,12 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
   
   
  }#repeat number of runs
+ 
+ #Maybe what we actually care about is number of mature females. 
+ 
+ matP1=0.5*t(t(Natage_P1_Nyrs) *Q1)
+ matP2=0.5*t(t(Natage_P2_Nyrs) *Q1)
+ 
  
  #Are they correlated
  #All individuals after the first 10
@@ -151,8 +176,8 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
 
  for(i in 1:Nyrs)
  {
- P1_raw[i,]=(Q1*Natage_P1_Nyrs[i,]);
- P2_raw[i,]=(Q2*Natage_P2_Nyrs[i,]) }
+ P1_raw[i,]=(Q1*Natage_P1_Nyrs[i,]*Wt_all);
+ P2_raw[i,]=(Q2*Natage_P2_Nyrs[i,]*Wt_all) }
  
  pcor_raw=cor.test(rowSums(P1_raw[51:Nyrs,]),rowSums(P2_raw[51:Nyrs,]),alternative="greater")
  
@@ -160,6 +185,19 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
 #  plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P1_raw[51:Nyrs, ]),col="red")
 #  plot(rowSums(P2_srvsel[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_srvsel[51:Nyrs, ]))));lines(rowSums(P1_srvsel[51:Nyrs, ]),col="red")
 # plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P2_srvsel[51:Nyrs, ]),col="red")
+ 
+ #*******************
+ #How to convert instantaneous fishing morality rate from exploitation rate (catch/biomass)
+ #F40=.224
+ #catch=sum((Wt_all)*((fishsel*F40)/(fishsel1*F40+natmort[1])*(1-exp(-(fishsel*F40+natmort[1])))*Natage_P1_Nyrs[1,]));catch
+ #biomass=sum((Wt_all)/(F40+natmort[1])*(1-exp(-(F40+natmort[1])))*Natage_P1_Nyrs[1,]);biomass
+ #catch/biomass
+
+ #F40=0.033 exp=0.008
+ #F40=0.077;exp=0.200
+ #F40=.224; exp=0.06
+ #*******************
+ 
  
  #if MIG=1 quantify migration rate which is number of migtants (age1) from 1 to 2 divided by total number in pop2
  rate[1]=mean(migrants_to2,na.rm=TRUE)
@@ -169,14 +207,14 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  if(pcor_raw$estimate>0){outpops[[2]]=pcor_raw$p.value}else{outpops[[2]]=1};
   outpops[[3]]=rate[1];
  outpops[[4]]=rate[2];
- outpops[[5]]=rowSums(Natage_P1_Nyrs);
- outpops[[6]]=rowSums(Natage_P2_Nyrs);
+ outpops[[5]]=0.5*rowSums(P1_raw);
+ outpops[[6]]=0.5*rowSums(P2_raw);
  return(outpops)
 }
 
 #This function should do the first 4 rows of unequal migration
 FINMATmeanSM=matrix(0,8,11);FINMATvarSM=matrix(0,8,11);FINMATvarSM_raw=matrix(0,8,11);FINMATmeanSM_raw=matrix(0,8,11);
-for(exp in 1:11){#was 1:11
+for(exp in 1:1){#was 1:11
  print("exp=");print(exp);
  age=seq(1,nages,1)
  Linf=51.53 
@@ -190,43 +228,26 @@ for(exp in 1:11){#was 1:11
  sigmaR2_2=0.64
  
  
- fishsel1=fishsel
- fishsel2=fishsel
+ fishsel1=fishsel #fishing mortalituy rate for WAI
+ fishsel2=fishsel #fihing mortality rate fo rCAI
  natmort=c(0.05,0.05)
- SS0=c(430,750) #initial stock biomass.
+ SS0=c(434,750) #initial stock biomass.#cudrent values c(430,750)
  Q1=mat
  Q2=mat_a5012
- Nyrs=300 #Number of years to run the simulation
+ Nyrs=400 #Number of years to run the simulation
  Niter=100#number of iterations of the simulation
- Nrep=3
+ Nrep=10
  
- if (exp==1){}
- if (exp==2){natmort=c(.025,.025)}
- if (exp==3){natmort=c(.075,.075)}
- if (exp==4){natmort=c(.025,.075)}
- if (exp==5){Q2=mat;Q1=mat}
- if (exp==6){Q2=mat}
- if (exp==7){Q1=mat}
- if (exp==8){sigmaR2_1=0.25;sigmaR2_2=0.25}
- if (exp==9){sigmaR2_1=0.85;sigmaR2_2=0.85}
- if (exp==10){sigmaR2_1=0.85;sigmaR2_2=0.25}
- if (exp==11){sigmaR2_1=0.25;sigmaR2_2=0.85}
- for(popstat in 1:8){  #was 1:4
-  if(popstat<5){ MIG=1;}
-  if(popstat==1){SS0=c(750,750)}
-  if(popstat==2){SS0=c(430,750)}
-  if(popstat==3){SS0=c(75,750)}
-  if(popstat==4){SS0=c(750,75)}
-  if(popstat>4){ MIG=2;}
-  if(popstat==5){SS0=c(750,750)}
-  if(popstat==6){SS0=c(430,750)}
-  if(popstat==7){SS0=c(75,750)}
-  if(popstat==8){SS0=c(750,75)}
-  
+ #TAC=Natage_P1_Nyrs[1,]
+ 
+Q1=mat;Q2=mat;sigmaR2_1=0.75;sigmaR2_2=0.75;
+MIG=2;
+
   test=list();meanzSM=vector();meanzSM_raw=vector();varSM=vector();stats=vector();migrants1_to2=vector();migrants2=vector();cor=vector();cor_raw=vector();migsSM1_to2=vector();migsSM2_to1=vector();stats2_to1=vector();#mig==2 should have 2 vlues
-  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM/")
+  popsizeA=matrix(0,Nyrs,10);popsizeB=popsizeA
+  setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM_forecast/")
   #Make a matrix of all the migration rates by the number of reps so for the k loop you can get means of Nreps over Niter runs and variance
-  m=seq(0,.5,.02)#m=seq(0,0.03,.001); Second is in all cases except where Popsize =50000,500
+  m=0.10#just this one; Second is in all cases except where Popsize =50000,500
   Mean_mat=matrix(0,length(m),Nrep)
   Mean_raw_mat=matrix(0,length(m),Nrep)
   Mig1to2_mat=matrix(0,length(m),Nrep)
@@ -236,7 +257,7 @@ for(exp in 1:11){#was 1:11
   for (k in 1:Nrep){  #k is number of Nrep
    for(j in 1:length(m)){   #m is the different migration rates you are testing
     for(i in 1:Niter){  #Call this Niter
-     test=pops(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m[j],MIG,sigmaR2_1,sigmaR2_2,Nyrs);
+     test=pops(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigmaR2_1,sigmaR2_2,Nyrs);
      cor[i]=test[[1]];    #pcor$p.value  #this is the p-value for each run of 2 populations for 300 years (minus 10 years first) plus maturity and survey selectiivty and observation error
      cor_raw[i]=test[[2]];    #pcor_raw$p.value  #this is the p-value for each run of 2 populations for 300 years (minus 10 years first) raw data that is mature fish
      migrants1_to2[i]=test[[3]];    #mean(migrants_to2)
@@ -257,16 +278,13 @@ for(exp in 1:11){#was 1:11
     migsSM1_to2[j]=mean(migrants1_to2)#this is at each level of migration the actual migration rate (migrants into popn 2)
     migsSM2_to1[j]=mean(migrants2)
     
-    #Year=c(rep(seq(1,Nyrs,1),2))
-    #Number=c(test[[4]],test[[5]])
-    #Name=c(rep("PopA",100),rep("PopB",100))
-    #Res=data.frame(Number,Name,Year)
-    #print(ggplot(Res)+geom_line(aes(x=Year,y=Number,col=Name))+theme_bw())
-   }
+    }
    Mean_mat[,k]=meanzSM
    Mean_raw_mat[,k]=meanzSM_raw
    Mig1to2_mat[,k]=migsSM1_to2
    Mig2to1_mat[,k]=migsSM2_to1
+   popsizeA[,k]=test[[5]]
+   popsizeB[,k]=test[[6]]
    
    #pcor;pcor_raw
    #plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P1_raw[51:Nyrs, ]),col="red")
@@ -290,17 +308,40 @@ for(exp in 1:11){#was 1:11
 #  FINMATmeanSM2[popstat,exp]=mean(stats2_to1)
 #  FINMATvarSM[popstat,exp]=var(stats)
 #  FINMATvarSM2[popstat,exp]=var(stats2_to1)
-  write.csv(outFIN,paste("outMAT_popstat=",popstat,"_exp=",exp,".csv",sep=""))
+  write.csv(outFIN,paste("outMAT_popstat=",1,"_exp=",exp,".csv",sep=""))
    }
-}
-
-
 
 
 
 Year=c(rep(seq(1,Nyrs,1),2))
-Number=c(test[[4]],test[[5]])
-Name=c(rep("PopA",Nyrs),rep("PopB",Nyrs))
-Res=data.frame(Number,Name,Year)
-ggplot(Res)+geom_line(aes(x=Year,y=Number,col=Name))+theme_bw()
+Number=c(rowMeans(popsizeA),rowMeans(popsizeB))
+Var=c(rowVars(popsizeA),rowVars(popsizeB))
+
+varLogBiom=log(1+(Var/(Number^2)))
+LCI=Number/exp(1.96*sqrt(varLogBiom)) 
+HCI=Number*exp(1.96*sqrt(varLogBiom))
+
+Population=c(rep("WAI",Nyrs),rep("CAI",Nyrs))
+Res=data.frame(Number,Population,Year)
+print(ggplot(Res)+geom_line(aes(x=Year,y=Number,col=Population))+
+        theme_bw())+
+  geom_ribbon(aes(x=Year,ymin = LCI, ymax = HCI,fill=Population),alpha=0.4)+
+  ylab("Female Spawning Biomass (t)")+ylim(c(0,2000))+
+  geom_hline(yintercept=0.4*750,lty=1)+geom_hline(yintercept=0.4*434,lty=2)
+
+#What is the Bx% of WAI?
+WAI[z]=mean(Number[350:400])/434
+CAI[z]=mean(Number[750:800])/750
+}
+#F40 after 150 yrs is .09 in WAI, MIG=2
+#m=0.02 you are at B41%
+#m=0.002 you are at B40%
+#m=0 you are at B56%(?)
+#F40 in WAI after 150 years is .11, MIG=1
+#m=0, B46%
+#m=0.03, B47%
+
+#F40 in WAI after 150 years is .2, MIG=1
+#m=0, B22%
+
 
