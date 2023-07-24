@@ -2,10 +2,12 @@ library(ggplot2)
 library(tidyverse)
 library(reshape2)
 library(ggpattern)
+library(tidyverse)
+library(ggpattern)
 
 
 
-setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/cod_m.5_Niter100_Nrep3/")
+setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_GM/")
 Niter=100
 m=seq(0,.5,.02)#FILL THESE IN
 max=.5
@@ -30,11 +32,11 @@ for(popstat in 1:8){
 #    detailed_raw[,popstat+2]=x$rowVars.Mean_raw_mat.
     }
     Means_survey[popstat,exp]=x$m[max(which(round(x$rowMeans.Mean_mat.)<.9*Niter))]
-  for(i in 1:length(m)){TEST[i]=x$rowMeans.Mean_mat.[i]>=.79*100}
+  for(i in 1:length(m)){TEST[i]=x$rowMeans.Mean_mat.[i]>=.89*100}
   if(sum(TEST)>0){Means_survey[popstat,exp]=x$m[min(which(TEST==TRUE))]}else(Means_survey[popstat,exp]=max(m))
-  for(i in 1:length(m)){TEST[i]=x$rowMeans.Mean_raw_mat.[i]>=.79*100}
+  for(i in 1:length(m)){TEST[i]=x$rowMeans.Mean_raw_mat.[i]>=.89*100}
   if(sum(TEST)>0){Means_raw[popstat,exp]=x$m[min(which(TEST==TRUE))]}else(Means_raw[popstat,exp]=max(m))
-  Means_raw[popstat,exp]=x$m[max(which(round(x$rowMeans.Mean_raw_mat.)<.79*Niter))]
+  Means_raw[popstat,exp]=x$m[max(which(round(x$rowMeans.Mean_raw_mat.)<.89*Niter))]
  }
 }
 
@@ -54,7 +56,7 @@ detailed_raw2$Migration=rep(m,8)
 detailed_raw2$Popsizes = rep(c(rep("A. 6,834, 6,834",length(m)),rep("B. 6,834, 683*",length(m)),rep("C. 6,834, 68*",length(m)),rep("D. 683, 6,834*",length(m))),2)
 ggplot(detailed_raw2)+geom_line(aes(x=Migration,y=value,col=Popsizes))+facet_wrap(~as.factor(Direction))+theme_bw()+
  ylab("Percentage with significant correlation")+
- ggtitle("Pacific cod correlation in population size relative to one and two-way migration\n (raw data)")
+ ggtitle("Pacific cod correlation in population size relative to one- and two-way migration\n (raw data)")
 
 #Make the ine plot for survey and raw
 detailed_both=rbind(detailed_raw2,detailed_survey2)
@@ -62,7 +64,7 @@ detailed_both$Type=c(rep("Raw",208),rep("Survey",208))
 colnames(detailed_both)[6]="Sizes"
 ggplot(detailed_both)+geom_line(aes(x=Migration,y=value,col=Sizes,linetype=Type))+facet_wrap(~as.factor(Direction))+theme_bw()+
   ylab("Percentage with significant correlation")+
-  ggtitle("Pacific cod correlation in population size relative to one and two-way migration")
+  ggtitle("Pacific cod correlation in population size relative to one- and two-way migration")
 
 #dimensions of detailed_raw2 are 8 sensitivities * length of m (seq(0,0.04,0.001))
 
@@ -106,19 +108,6 @@ rownames(Tab_cod)=DFmean$Popsizes
 #This is the threshold at which 80% of 100 populations went from uncorrelated to correlated.
 write.csv((Tab_cod),"/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/Tab_cod.csv")
 
-#Blackspotted 55 out of 88 tests had correlation eventually.
-mean(Tab_BS[which(Tab_BS<.5)])#0.093 was the mean rate that correlation occurred
-hist(Tab_BS[which(Tab_BS<.5)],main="Blackspotted rockfish",xlab="Migration rate",xlim=c(0,.5))
-
-#Cod 68 out of 88 tests had correlation eventually.
-#correlation happened more commonly at small numbers
-mean(Tab_cod[which(Tab_cod<.5)]) #Mean = 0.047
-hist(Tab_cod[which(Tab_cod<.5)],main="Pacific cod",xlab="Migration rate",xlim=c(0,.5))
-
-Freq_both=data.frame(Rate=c(Tab_BS[which(Tab_BS<.5)],Tab_cod[which(Tab_cod<.5)]),Species=c(rep("Pacific cod",74),rep("Blackspotted rockfish",56)))
-#Also Underlying distributino of whether it happens or not.
-
-ggplot(data=Freq_both,aes(x=Rate))+geom_histogram(aes(fill=Species),position="dodge")+theme_bw()+ylab("Frequency")+xlab("Migration Rate")
 
 #plot raw data results
 DFmean <- data.frame(Popsizes = c("A. 6,834, 6,834", "B. 6,834, 683*", "C. 6,834, 68*", "D. 683, 6,834*","A. 6,834, 6,834", "B. 6,834, 683*", "C. 6,834, 68*", "D. 683, 6,834*"),Means_raw)
@@ -151,12 +140,12 @@ ggplot(data = DFlong2, aes(x = Group, y=value,fill = Popsizes, pattern = Result)
  scale_pattern_manual(values = c(Uncorrelated = "stripe", Correlated = "none"))+
  guides(pattern = guide_legend(override.aes = list(fill = "white")),
         fill = guide_legend(override.aes = list(pattern = "none")))+
- labs(x = "Correlation calculated on populations with mature fish only", y = "Migration Rate", pattern = "Result",fill="Relative population size")+
+ labs(x = "Correlation calculated on populations with mature fish selected by fishery (perfect information)", y = "Migration Rate", pattern = "Result",fill="Relative population size")+
  scale_x_discrete(labels=c('','One way', '','','','Two way','',''))+facet_wrap(~Exp)+theme_bw()+
  theme( strip.background  = element_blank(), panel.grid.major = element_line(colour = "grey80"),panel.border = element_blank(),axis.ticks = element_line(size = 0),panel.grid.minor.y = element_blank(),panel.grid.major.y = element_blank())+
  ggtitle("Pacific cod correlation in population size relative to migration")
 
-setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/blackspotted_m.5_Niter100_Nrep3/")
+setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM/")
 Niter=100
 m=seq(0,.5,.02)#FILL THESE IN
 max=.5
@@ -195,7 +184,7 @@ detailed_survey2$Migration=rep(m,8)
 detailed_survey2$Popsizes = rep(c(rep("A. 750, 750",length(m)),rep("B. 430, 750*",length(m)),rep("C. 75, 750*",length(m)),rep("D. 750, 75*",length(m))),2)
 ggplot(detailed_survey2)+geom_line(aes(x=Migration,y=value,col=Popsizes))+facet_wrap(~as.factor(Direction))+theme_bw()+
   ylab("Percentage with significant correlation")+
-  ggtitle("Blackspotted rockfish correlation in population size relative to one and\ntwo-way migration (simulated survey data)")
+  ggtitle("Blackspotted rockfish correlation in population size relative to one- and\ntwo-way migration (simulated survey data)")
 
 #only for base case (raw data)
 detailed_raw2=reshape2::melt(detailed_raw)
@@ -204,7 +193,7 @@ detailed_raw2$Migration=rep(m,8)
 detailed_raw2$Popsizes = rep(c(rep("A. 750, 750",length(m)),rep("B. 430, 750*",length(m)),rep("C. 75, 750*",length(m)),rep("D. 750, 75*",length(m))),2)
 ggplot(detailed_raw2)+geom_line(aes(x=Migration,y=value,col=Popsizes))+facet_wrap(~as.factor(Direction))+theme_bw()+
   ylab("Percentage with significant correlation")+
-  ggtitle("Blackspotted rockfish correlation in population size relative to one and two-way migration\n (raw data)")
+  ggtitle("Blackspotted rockfish correlation in population size relative to one- and two-way migration\n (raw data)")
 
 #Make the ine plot for survey and raw
 detailed_both=rbind(detailed_raw2,detailed_survey2)
@@ -212,7 +201,7 @@ detailed_both$Type=c(rep("Raw",208),rep("Survey",208))
 colnames(detailed_both)[6]="Sizes"
 ggplot(detailed_both)+geom_line(aes(x=Migration,y=value,col=Sizes,linetype=Type))+facet_wrap(~as.factor(Direction))+theme_bw()+
   ylab("Percentage with significant correlation")+
-  ggtitle("Blackspotted rockfish correlation in population size relative to one and two-way\nmigration")
+  ggtitle("Blackspotted rockfish correlation in population size relative to one- and two-way\nmigration")
 
 
 #plot survey data results
@@ -264,6 +253,22 @@ rownames(Tab_BS)=DFmean$Popsizes
 #This is the threshold at which 80% of 100 populations went from uncorrelated to correlated.
 write.csv((Tab_BS),"/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/Tab_BS.csv")
 
+#Cod 68 out of 88 tests had correlation eventually.
+#correlation happened more commonly at small numbers
+mean(Tab_cod[which(Tab_cod<.5)]) #Mean = 0.059 was mean rate that correlation occurred
+length(Tab_cod[which(Tab_cod<.5)])#75
+hist(Tab_cod[which(Tab_cod<.5)],main="Pacific cod",xlab="Migration rate",xlim=c(0,.5))
+
+#Blackspotted 55 out of 88 tests had correlation eventually.
+mean(Tab_BS[which(Tab_BS<.5)])#0.094 was the mean rate that correlation occurred
+length(Tab_BS[which(Tab_BS<.5)])#59
+hist(Tab_BS[which(Tab_BS<.5)],main="Blackspotted rockfish",xlab="Migration rate",xlim=c(0,.5))
+
+Freq_both=data.frame(Rate=c(Tab_BS[which(Tab_BS<.5)],Tab_cod[which(Tab_cod<.5)]),Species=c(rep("Pacific cod",75),rep("Blackspotted rockfish",59)))
+#Also Underlying distributino of whether it happens or not.
+
+ggplot(data=Freq_both,aes(x=Rate))+geom_histogram(aes(fill=Species),position="dodge")+theme_bw()+ylab("Frequency")+xlab("Migration Rate")
+
 #plot raw data results
 DFmean <- data.frame(Popsizes = c("A. 750, 750*", "B. 430, 750*", "C. 75, 750*", "D. 750, 75*","A. 750, 750*", "B. 430, 750*", "C. 75, 750*", "D. 750, 75*"),Means_raw)
 
@@ -301,7 +306,7 @@ ggplot(data = DFlong2, aes(x = Group, y=value,fill = Popsizes, pattern = variabl
  ggtitle("Blackspotted rockfish correlation in population size relative to migration")
 
 
-setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/blackspotted_forcesizes/")
+setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM_forcesizes/")
 Niter=100
 m=seq(0,.5,.02)
 max=.5
@@ -311,18 +316,18 @@ Means_survey=matrix(0,8,11)
 #Means_raw is just the actual numbers with maturity applied
 Means_raw=matrix(0,8,11)
 
-detailed_survey=matrix(0,length(m),8);colnames(detailed_survey)=rep(seq(1,4,1),2)
-detailed_raw=matrix(0,length(m),8)
+detailed_survey=matrix(0,length(m),12);colnames(detailed_survey)=rep(seq(1,4,1),3)
+detailed_raw=matrix(0,length(m),12)
 
 TEST=vector()
-for(popstat in 1:2){
+for(popstat in 1:3){
   for (exp in 1:1){
     x=read.csv(paste("outMAT_popstat=",popstat,"_exp=",exp,".csv",sep=""))  
     if(exp==1){
       detailed_survey[,popstat]=x$rowMeans.Mean_mat.   
-      detailed_survey[,popstat+2]=x$rowVars.Mean_mat.
+      detailed_survey[,popstat+3]=x$rowVars.Mean_mat.
       detailed_raw[,popstat]=x$rowMeans.Mean_raw_mat.
-      detailed_raw[,popstat+2]=x$rowVars.Mean_raw_mat.}
+      detailed_raw[,popstat+3]=x$rowVars.Mean_raw_mat.}
     #Means_survey[popstat,exp]=x$m[max(which(round(x$rowMeans.Mean_mat.)<.9*Niter))]
     for(i in 1:length(m)){TEST[i]=x$rowMeans.Mean_mat.[i]>=.89*100}
     if(sum(TEST)>0){Means_survey[popstat,exp]=x$m[min(which(TEST==TRUE))]}else(Means_survey[popstat,exp]=max(m))
@@ -333,32 +338,33 @@ for(popstat in 1:2){
 }
 #dimensions are 
 #number of rows is the length of m (seq(0,0.04,0.001)).
-detailed_survey2=reshape2::melt(detailed_survey[,1:2])
-detailed_survey2$Direction=c(rep("One-way",length(m)),rep("Two-way",length(m)))
-detailed_survey2$Migration=rep(m,2)
-detailed_survey2$HCI=c(detailed_survey[,1]+1.96*sqrt(detailed_survey[,3]),detailed_survey[,2]+sqrt(detailed_survey[,4]))
-detailed_survey2$LCI=c(detailed_survey[,1]-1.96*sqrt(detailed_survey[,3]),detailed_survey[,2]-sqrt(detailed_survey[,4]))
+detailed_survey2=reshape2::melt(detailed_survey[,1:3])
+detailed_survey2$Direction=c(rep("One-way",length(m)),rep("Two-way",length(m)),rep("One-way (R)",length(m)))
+detailed_survey2$Migration=rep(m,3)
+detailed_survey2$HCI=c(detailed_survey[,1]+1.96*sqrt(detailed_survey[,4]),detailed_survey[,2]+1.96*sqrt(detailed_survey[,5]),detailed_survey[,3]+1.96*sqrt(detailed_survey[,6]))
+detailed_survey2$LCI=c(detailed_survey[,1]-1.96*sqrt(detailed_survey[,4]),detailed_survey[,2]-1.96*sqrt(detailed_survey[,5]),detailed_survey[,3]-1.96*sqrt(detailed_survey[,6]))
 
 DFmean <- data.frame(Means_survey)
 
-detailed_survey2$Type = rep("Survey",2*length(m))
-detailed_raw2=reshape2::melt(detailed_raw[,1:2])
-detailed_raw2$Direction=c(rep("One-way",length(m)),rep("Two-way",length(m)))
-detailed_raw2$Migration=rep(m,2)
-detailed_raw2$Type=rep("Raw",2*length(m))
-detailed_raw2$HCI=c(detailed_raw[,1]+1.96*sqrt(detailed_raw[,3]),detailed_raw[,2]+sqrt(detailed_raw[,4]))
-detailed_raw2$LCI=c(detailed_raw[,1]-1.96*sqrt(detailed_raw[,3]),detailed_raw[,2]-sqrt(detailed_raw[,4]))
+detailed_survey2$Error = rep("Observation error",3*length(m))
+detailed_raw2=reshape2::melt(detailed_raw[,1:3])
+detailed_raw2$Direction=c(rep("One-way",length(m)),rep("Two-way",length(m)),rep("One-way (R)",length(m)))
+detailed_raw2$Migration=rep(m,3)
+detailed_raw2$Error=rep("No error",3*length(m))
+detailed_raw2$HCI=c(detailed_raw[,1]+1.96*sqrt(detailed_raw[,4]),detailed_raw[,2]+1.96*sqrt(detailed_raw[,5]),detailed_raw[,3]+1.96*sqrt(detailed_raw[,6]))
+detailed_raw2$LCI=c(detailed_raw[,1]-1.96*sqrt(detailed_raw[,4]),detailed_raw[,2]-1.96*sqrt(detailed_raw[,5]),detailed_raw[,3]-1.96*sqrt(detailed_raw[,6]))
 
 detailed_RS=rbind(detailed_survey2,detailed_raw2)
 
 
-ggplot(detailed_RS)+geom_line(aes(x=Migration,y=value,col=Type))+facet_wrap(~as.factor(Direction))+theme_bw()+
-  ylab("Percentage with significant correlation")+geom_ribbon(aes(x=Migration,ymin = LCI, ymax = HCI,fill=Type),alpha=0.4)+
-  ggtitle("Blackspotted rockfish correlation in population size relative to one and two-way migration\nwith 95% confidence intervals on simulated survey and raw data")
+ggplot(detailed_RS)+geom_line(aes(x=Migration,y=value,col=Error))+facet_wrap(~as.factor(Direction))+theme_bw()+
+  ylab("Percentage with significant correlation")+geom_ribbon(aes(x=Migration,ymin = LCI, ymax = HCI,fill=Error),alpha=0.4)+
+  ggtitle("Blackspotted rockfish correlation in population size with one-way, one-way (R), and two-way 
+migration with 95% confidence intervals on simulated survey and raw data")
 
 #plot comparisons for blackspooted that only vary by order of magnitude not ratio
 #note relpop3 is with a different protocol to add observation error.
-setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/blackspotted_relpop_s09/")
+setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_SM_relpopsize/")
 Niter=100
 m=seq(0,.5,.02)
 max=.5
@@ -499,7 +505,7 @@ ggplot(data = DFlong, aes(x = Popsizes, y=value,fill = Popsizes, pattern = varia
  ggtitle("Blackspotted rockfish correlation in population size relative to migration (simulated survey)")
 
 #plot comparisons for cod that only vary by order of magnitude not ratio
-setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/cod_relpop1/")
+setwd("/Users/ingrid.spies/Documents/GOA_cod/SimulationResults/COV_2pops_GM_relpopsize/")
 Niter=100
 m=seq(0,.5,.02)
 max=.5
@@ -672,5 +678,55 @@ mean(BS$Biomass[which(BS$Region=="Western"&BS$Year>1999)])
 #910.7
 mean(BS$Biomass[which(BS$Region=="Western"&BS$Year%in%c(1980,1983,1991,1994,1997))]) #Yeras prior to 2000 excluding the high year 1986
 #2772.2
+
+
+#plot fishing mortality rate estimates
+#For the forecast, Paul Spencer calculated 
+Yrs_Fs=seq(2004,2021,1)
+Fs_WAI=c(0.15868779, 0.064043115, 0.183565069,0.074936976,0.089887144,0.093366688,0.105945674,0.0491738,0.084565222,0.13283658,0.067725809,0.06483602,0.041281612,0.043894911,0.078187379,0.114724014,0.156971955,0.090780347)
+Fs_CAI=c(0.016273095,0.006434666,0.011303924,0.010350559,0.017349559,0.022217931,0.012027968,0.009524634,0.017029085,0.015513793,0.008540635,0.009414296,0.009638311,0.028216015,0.028388582,0.055648747,0.058407917,0.056453714)
+
+
+mean(Fs_WAI);quantile(Fs_WAI,c(.05,.95));var(Fs_WAI)
+#Mean WAI=0.09418945
+#5% quantile=0.04350292
+#95%=0.16241938
+#var=0.001689368
+#stdev=0.04110192
+Fs_WAI_LCI=Fs_WAI-1.96*0.04110192*Fs_WAI
+Fs_WAI_HCI=Fs_WAI+1.96*0.04110192*Fs_WAI
+#lognormal CIs
+Fs_WAI_LCI_LN=Fs_WAI/exp(1.96*(Fs_WAI))
+Fs_WAI_HCI_LN=Fs_WAI*exp(1.96*(Fs_WAI))
+
+#Now central
+mean(Fs_CAI);quantile(Fs_CAI,c(.05,.95));var(Fs_CAI)
+#Mean CAI=0.02181852
+#5% quantile=0.00822474
+#95%=0.05674684
+#var=0.0002991049
+#stdev=0.01729465
+Fs_CAI_LCI=Fs_CAI-1.96*0.04110192*Fs_CAI
+Fs_CAI_HCI=Fs_CAI+1.96*0.04110192*Fs_CAI
+#lognormal CIs
+Fs_CAI_LCI_LN=Fs_CAI/exp(1.96*(Fs_CAI))
+Fs_CAI_HCI_LN=Fs_CAI*exp(1.96*(Fs_CAI))
+
+Fz=data.frame(Year=rep(Yrs_Fs,2),Mean=c(Fs_WAI,Fs_CAI),LCI=c(Fs_WAI_LCI,Fs_CAI_LCI),HCI=c(Fs_WAI_HCI,Fs_CAI_HCI),Region=c(rep("WAI",18),rep("CAI",18)),LCI_LN=c(Fs_WAI_LCI_LN,Fs_CAI_LCI_LN),HCI_LN=c(Fs_WAI_HCI_LN,Fs_CAI_HCI_LN))
+
+ggplot(Fz)+geom_line(aes(x=Year,y=Mean,col=Region))+theme_bw()+ylab("Fishery exploitation rate")
+
+#Normal CIs
+ggplot(Fz) + geom_line(aes(x=Year,y=Mean,col=Region)) + 
+  geom_ribbon(aes(x=Year,ymin=LCI, ymax=HCI,col=Region), alpha=0.2)
+
+#Lognormal CIs
+ggplot(Fz) + geom_line(aes(x=Year,y=Mean,col=Region)) + 
+  geom_ribbon(aes(x=Year,ymin=LCI_LN, ymax=HCI_LN,col=Region), alpha=0.2)+theme_bw()
+
+ggplot(Fz, aes(x = Year, y = Mean,group = Region, fill = Region)) + 
+  geom_line(aes(x=Year,y=Mean,col=Region)) +
+  geom_ribbon(aes(ymin = LCI_LN, ymax = HCI_LN), alpha = 0.3)+theme_bw()+ylab("Fishery exploitation rate")
+
 
 
