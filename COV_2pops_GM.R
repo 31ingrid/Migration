@@ -229,6 +229,11 @@ for(exp in 1:11){#was 1:11
   Mean_raw_mat=matrix(0,length(m),Nrep)
   Mig1to2_mat=matrix(0,length(m),Nrep)
   Mig2to1_mat=matrix(0,length(m),Nrep)
+  popA_vec=vector();popA_vec2=vector()
+  popB_vec=vector();popB_vec2=vector()
+  popA_mat=matrix(0,length(m),Nrep)
+  popB_mat=matrix(0,length(m),Nrep)
+  
   #migrants1_to2 is the proportion of migrants from 1 to 2 divided by the size of pop2
   #migrants2 is the opposite, but For MIG==1 (1 way migration) it is the proportion from 1 to 2 divided by the size of 1
   for (k in 1:Nrep){  #k is number of Nrep
@@ -239,6 +244,8 @@ for(exp in 1:11){#was 1:11
      cor_raw[i]=test[[2]];    #pcor_raw$p.value  #this is the p-value for each run of 2 populations for 300 years (minus 10 years first) raw data that is mature fish
      migrants1_to2[i]=test[[3]];    #mean(migrants_to2)
      migrants2[i]=test[[4]];  #mean(migrants_to1,na.rm=TRUE)
+     popA_vec[i]=mean(test[[5]][250:300])
+     popB_vec[i]=mean(test[[6]][250:300])
     }
     #code to apply false discovery rate p-value adjustment
     cor2=sort(cor);
@@ -254,6 +261,8 @@ for(exp in 1:11){#was 1:11
         #
     migsGM1_to2[j]=mean(migrants1_to2)#this is at each level of migration the actual migration rate (migrants into popn 2)
     migsGM2_to1[j]=mean(migrants2)
+    popA_vec2[j]=mean(popA_vec)
+    popB_vec2[j]=mean(popB_vec)
     
     #Year=c(rep(seq(1,Nyrs,1),2))
     #Number=c(test[[4]],test[[5]])
@@ -265,6 +274,8 @@ for(exp in 1:11){#was 1:11
    Mean_raw_mat[,k]=meanzGM_raw
    Mig1to2_mat[,k]=migsGM1_to2
    Mig2to1_mat[,k]=migsGM2_to1
+   popA_mat[,k]=popA_vec2
+   popB_mat[,k]=popB_vec2
    
    #plot migration rate and mean number correlated
    #varGM[k]=var(test[which(test<0.05)])
