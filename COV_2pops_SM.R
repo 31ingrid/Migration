@@ -100,7 +100,7 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
  Natage_P2_Nyrs[1,]=N_init_P2
  
  for (y in 2:Nyrs){
-  
+
    FSB_P1[y-1]=0.5*sum(Wt_all*Natage_P1_Nyrs[y-1,]*Q1)
    VBRec_P1=(4*h*Rec0_P1*FSB_P1[y-1])/(SS0[1]*(1-h)+(FSB_P1[y-1]*((5*h)-1)))*exp(rnorm(1,0,sigmaR2_1))
    
@@ -120,14 +120,14 @@ pops=function(Linf,K,A0,psi,theta,fishsel1,fishsel2,natmort,Q1,Q2,SS0,m,MIG,sigm
   if (MIG==1){  #Just one way from pop1 to pop2
    Natage_P1_Nyrs[y,]=(1-m)*Natage_P1_Nyrs[y,]
    Natage_P2_Nyrs[y,]=Natage_P2_Nyrs[y,]+(m*Natage_P1_Nyrs[y,])
-   migrants_to2[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P2_Nyrs[y,])
+   migrants_to2[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P2_Nyrs[y,])#I set this up as proportion of migrants into 2 relative to what is already in 2.
    migrants_to1[y]=sum(m*Natage_P1_Nyrs[y,])/sum(Natage_P1_Nyrs[y,])
   }
   
   if (MIG==2){ #both ways migration
    Natage_P1_Nyrs[y,]=Natage_P1_Nyrs[y,]*(1-m)+Natage_P2_Nyrs[y,]*m
    Natage_P2_Nyrs[y,]=Natage_P2_Nyrs[y,]*(1-m)+Natage_P1_Nyrs[y,]*m
-   migrants_to2[y]=sum(m*Natage_P1_Nyrs[y,])/sum((1-m)*Natage_P2_Nyrs[y,])
+   migrants_to2[y]=sum(m*Natage_P1_Nyrs[y,])/sum((1-m)*Natage_P2_Nyrs[y,])#proportion coming into 2 relative to what is left after some leave due to migration.
    migrants_to1[y]=sum(m*Natage_P2_Nyrs[y,])/sum((1-m)*Natage_P1_Nyrs[y,])
   }
   
@@ -193,7 +193,7 @@ for(exp in 1:11){#was 1:11
  fishsel1=fishsel
  fishsel2=fishsel
  natmort=c(0.05,0.05)
- SS0=c(430,750) #initial stock biomass.
+ SS0=c(750,750) #initial stock biomass.
  Q1=mat
  Q2=mat_a5012
  Nyrs=300 #Number of years to run the simulation
@@ -202,7 +202,7 @@ for(exp in 1:11){#was 1:11
  
  if (exp==1){}
  if (exp==2){natmort=c(.025,.025)}
- if (exp==3){natmort=c(.075,.075)}
+ if (exp==3){natmort=c(.075,.025)} #This is a change . It was accidentally 0.075, 0.075
  if (exp==4){natmort=c(.025,.075)}
  if (exp==5){Q2=mat;Q1=mat}
  if (exp==6){Q2=mat}
@@ -231,6 +231,11 @@ for(exp in 1:11){#was 1:11
   Mean_raw_mat=matrix(0,length(m),Nrep)
   Mig1to2_mat=matrix(0,length(m),Nrep)
   Mig2to1_mat=matrix(0,length(m),Nrep)
+  popA_vec=vector();popA_vec2=vector()
+  popB_vec=vector();popB_vec2=vector()
+  popA_mat=matrix(0,length(m),Nrep)
+  popB_mat=matrix(0,length(m),Nrep)
+  
   #migrants1_to2 is the proportion of migrants from 1 to 2 divided by the size of pop2
   #migrants2 is the opposite, but For MIG==1 (1 way migration) it is the proportion from 1 to 2 divided by the size of 1
   for (k in 1:Nrep){  #k is number of Nrep
@@ -241,6 +246,8 @@ for(exp in 1:11){#was 1:11
      cor_raw[i]=test[[2]];    #pcor_raw$p.value  #this is the p-value for each run of 2 populations for 300 years (minus 10 years first) raw data that is mature fish
      migrants1_to2[i]=test[[3]];    #mean(migrants_to2)
      migrants2[i]=test[[4]];  #mean(migrants_to1,na.rm=TRUE)
+     popA_vec[i]=mean(test[[5]][250:300])
+     popB_vec[i]=mean(test[[6]][250:300])
     }
     #code to apply false discovery rate p-value adjustment
     cor2=sort(cor);
@@ -256,6 +263,8 @@ for(exp in 1:11){#was 1:11
         #
     migsSM1_to2[j]=mean(migrants1_to2)#this is at each level of migration the actual migration rate (migrants into popn 2)
     migsSM2_to1[j]=mean(migrants2)
+    popA_vec2[j]=mean(popA_vec)
+    popB_vec2[j]=mean(popB_vec)
     
     #Year=c(rep(seq(1,Nyrs,1),2))
     #Number=c(test[[4]],test[[5]])
@@ -267,6 +276,8 @@ for(exp in 1:11){#was 1:11
    Mean_raw_mat[,k]=meanzSM_raw
    Mig1to2_mat[,k]=migsSM1_to2
    Mig2to1_mat[,k]=migsSM2_to1
+   popA_mat[,k]=popA_vec2
+   popB_mat[,k]=popB_vec2
    
    #pcor;pcor_raw
    #plot(rowSums(P2_raw[51:Nyrs, ]),type="l",ylim=c(0,max(rowSums(P2_raw[51:Nyrs, ]))));lines(rowSums(P1_raw[51:Nyrs, ]),col="red")
@@ -280,7 +291,7 @@ for(exp in 1:11){#was 1:11
    #out=data.frame(m,meanzSM,meanzSM_raw,migsSM1_to2,migsSM2_to1)#add in varSM later
    #colnames(out)=c("Migration","Mean","Mean_raw","True_Mig1to2","True_Mig2to1")
      }
-  outFIN=data.frame(m,rowMeans(Mean_mat),rowVars(Mean_mat),rowMeans(Mean_raw_mat),rowVars(Mean_raw_mat),rowMeans(Mig1to2_mat),rowVars(Mig1to2_mat),rowMeans(Mig2to1_mat),rowVars(Mig2to1_mat))#add in varSM later
+  outFIN=data.frame(m,rowMeans(Mean_mat),rowVars(Mean_mat),rowMeans(Mean_raw_mat),rowVars(Mean_raw_mat),rowMeans(Mig1to2_mat),rowVars(Mig1to2_mat),rowMeans(Mig2to1_mat),rowVars(Mig2to1_mat),rowMeans(popA_mat),rowMeans(popB_mat))#add in varSM later
 #  a=sum(rowMeans(Mean_mat)>=0.95*Niter)
 #  if(a>0){FINMATmeanSM[popstat,exp]=min(which(rowMeans(Mean_mat)>=0.95*Niter))}else(FINMATmeanSM[popstat,exp]=-1)
 #  a=sum(rowMeans(Mean_raw_mat)>=0.95*Niter)
